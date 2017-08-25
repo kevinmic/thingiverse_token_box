@@ -3,15 +3,15 @@ largeTokenDiameter=25.5;
 wallThickness=2;
 
 tokensBetweenSpacers=5;
-tokenDiameter=smallTokenDiameter;
+tokenDiameter=largeTokenDiameter;
 tokenWidth=2.3;
 numberOfTokens=20;
 
 
-numberOfTokenSpacers=floor(numberOfTokens/tokensBetweenSpacers);
+numberOfTokenSpacers=floor((numberOfTokens-1-(numberOfTokens%tokensBetweenSpacers))/tokensBetweenSpacers);
 length=tokenWidth * numberOfTokens + tokenWidth * numberOfTokenSpacers + wallThickness * 2;
 width=tokenDiameter * 2 + wallThickness * 3;
-height=smallTokenDiameter/2 + wallThickness * 2;  // Extra thick on bottom to deal with spacers
+height=tokenDiameter/2 + wallThickness * 2;  // Extra thick on bottom to deal with spacers
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
 echo("length:", length);
@@ -33,7 +33,7 @@ module cylinderWithNotches(diameter, length ) {
         cylinder(d=diameter,h=length);
 
     for (i=[1:1:numberOfTokenSpacers]) {
-        translate([i * tokensBetweenSpacers * tokenWidth - tokenWidth/2, 0, -diameter/2])
+        translate([i * (tokensBetweenSpacers+1) * tokenWidth - tokenWidth/2, 0, -diameter/2])
             cube([tokenWidth,diameter/3,wallThickness*2], center=true);
     }
 }
