@@ -24,7 +24,11 @@ echo("height:", height);
 
 difference() {
     translate([0, 0, -height]) {
-        cube([length, width, height], center=false);
+        minkowski() {
+            cube([length, width, height], center=false);
+            sphere(1);
+        }
+        
     }
 
     translate([wallThickness,wallThickness,0]) {
