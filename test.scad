@@ -3,12 +3,12 @@ wallThickness=2;
 
 tokensBetweenSpacers=5;
 tokenDiameter=smallTokenDiameter;
-tokenThickness=2.3;
+tokenWidth=2.3;
 numberOfTokens=20;
 
 
 numberOfTokenSpacers=floor(numberOfTokens/tokensBetweenSpacers);
-length=tokenThickness * numberOfTokens + tokenThickness * numberOfTokenSpacers + wallThickness * 2;
+length=tokenWidth * numberOfTokens + tokenWidth * numberOfTokenSpacers + wallThickness * 2;
 width=45;
 height=13;
 
@@ -30,10 +30,8 @@ module cylinderWithNotches(diameter, length ) {
     rotate([0,90,0])
         cylinder(d=diameter,h=length);
 
-    for (d=[tokenThickness*tokensBetweenSpacers:tokenThickness*(tokensBetweenSpacers+1):length-(tokenThickness*(tokensBetweenSpacers+1))]) {
-        echo("d:", d);
-        cube([d,diameter/4,4]);
-        translate([d+tokenThickness-tokenThickness/2, 0, -diameter/2])
-            cube([tokenThickness,diameter/3,4], center=true);
+    for (i=[1:1:numberOfTokenSpacers]) {
+        translate([i * tokensBetweenSpacers * tokenWidth - tokenWidth/2, 0, -diameter/2])
+            cube([tokenWidth,diameter/3,4], center=true);
     }
 }
