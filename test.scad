@@ -23,8 +23,9 @@ echo("height:", height);
 
 
 difference() {
-    translate([0, 0, -height])
+    translate([0, 0, -height]) {
         cube([length, width, height], center=false);
+    }
 
     translate([wallThickness,wallThickness,0]) {
         for (i=[0:1:numberOfBoxes-1]) {
