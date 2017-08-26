@@ -11,28 +11,29 @@ numberOfBoxes=1;
 
 
 numberOfTokenSpacers=floor((numberOfTokensPerBox-1)/tokensBetweenSpacers);
-length=tokenWidth * numberOfTokensPerBox + // tokens
-       tokenWidth * numberOfTokenSpacers + // token spacers
-       wallThickness * 2; // end walls
-width=tokenDiameter * numberOfBoxes +
+cylinderLength=tokenWidth * numberOfTokensPerBox + // tokens
+       tokenWidth * numberOfTokenSpacers; // token spacers
+boxLength = cylinderLength + wallThickness * 2; // end walls
+boxWidth=tokenDiameter * numberOfBoxes +
       wallThickness * 2 + // left and right side
-      wallThickness * (numberOfBoxes); // between tokens
+      wallThickness * (numberOfBoxes-1); // between cylinders
 height=tokenDiameter/2 + wallThickness * 2;  // Extra thick on bottom to deal with spacers
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
-echo("length:", length);
-echo("width:", width);
+echo("cylinderLength:", cylinderLength);
+echo("boxLength:", boxLength);
+echo("boxWidth:", boxWidth);
 echo("height:", height);
 
 difference() {
     // create the bottom cube
-    bottomCube(length, width, height);
+    bottomCube(boxLength, boxWidth, height);
 
     // Remove the token space
     translate([0,-tokenDiameter/2*(numberOfBoxes)-(numberOfBoxes-1)*wallThickness/2,0]) {
         for (i=[0:1:numberOfBoxes-1]) {
             translate([0,(tokenDiameter/2 + tokenDiameter*i + wallThickness*i),0])
-                cylinderWithNotches(diameter=tokenDiameter, length=length-wallThickness*2);
+                cylinderWithNotches(diameter=tokenDiameter, length=cylinderLength);
         }
     }
     
@@ -40,9 +41,9 @@ difference() {
     translate([0,0,-3]) {
         rotate([180,0,0]) {
             difference() {
-                bottomCube(length+5, width+5, 5);
+                bottomCube(boxLength+5, boxWidth+5, 5);
                 translate([0,0,2])
-                    bottomCube(length-wallThickness*1.5, width-wallThickness*1.5, 20);   
+                    bottomCube(boxLength-wallThickness*1.5, boxWidth-wallThickness*1.5, 20);   
             }
         }
     }
