@@ -7,14 +7,16 @@ tokensBetweenSpacers=5;
 tokenDiameter=largeTokenDiameter;
 tokenWidth=2.3;
 numberOfTokensPerBox=20;
-numberOfBoxes=3;
+numberOfBoxes=1;
 
 
 numberOfTokenSpacers=floor((numberOfTokensPerBox-1)/tokensBetweenSpacers);
-length=tokenWidth * numberOfTokensPerBox + tokenWidth * numberOfTokenSpacers + wallThickness * 2;
+length=tokenWidth * numberOfTokensPerBox + // tokens
+       tokenWidth * numberOfTokenSpacers + // token spacers
+       wallThickness * 2; // end walls
 width=tokenDiameter * numberOfBoxes +
       wallThickness * 2 + // left and right side
-      wallThickness/2 * (numberOfBoxes); // between tokens
+      wallThickness * (numberOfBoxes); // between tokens
 height=tokenDiameter/2 + wallThickness * 2;  // Extra thick on bottom to deal with spacers
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
@@ -23,17 +25,18 @@ echo("width:", width);
 echo("height:", height);
 
 difference() {
+    // create the bottom cube
     bottomCube(length, width, height);
 
-    translate([-length/2,-width/2+wallThickness-wallThickness,0]) {
-        translate([wallThickness,wallThickness,0]) {
-            for (i=[0:1:numberOfBoxes-1]) {
-                translate([0,(tokenDiameter/2 + tokenDiameter*i + wallThickness*i),0])
-                    cylinderWithNotches(diameter=tokenDiameter, length=length-wallThickness*2);
-            }
+    // Remove the token space
+    translate([0,-tokenDiameter/2*(numberOfBoxes)-(numberOfBoxes-1)*wallThickness/2,0]) {
+        for (i=[0:1:numberOfBoxes-1]) {
+            translate([0,(tokenDiameter/2 + tokenDiameter*i + wallThickness*i),0])
+                cylinderWithNotches(diameter=tokenDiameter, length=length-wallThickness*2);
         }
     }
     
+    // Create a lip on the top
     translate([0,0,-3]) {
         rotate([180,0,0]) {
             difference() {
@@ -62,12 +65,14 @@ module bottomCube(length, width, height) {
 }
 
 
-module cylinderWithNotches(diameter, length ) {
-    rotate([0,90,0])
-        cylinder(d=diameter,h=length);
+module cylinderWithNotches(diameter, length) {
+    translate([-length/2,0,0]) { 
+        rotate([0,90,0])
+            cylinder(d=diameter,h=length);
 
-    for (i=[1:1:numberOfTokenSpacers]) {
-        translate([i * (tokensBetweenSpacers+1) * tokenWidth - tokenWidth/2, 0, -diameter/2])
-            cube([tokenWidth,diameter/3,wallThickness*2], center=true);
+        for (i=[1:1:numberOfTokenSpacers]) {
+            translate([i * (tokensBetweenSpacers+1) * tokenWidth - tokenWidth/2, 0, -diameter/2])
+                cube([tokenWidth,diameter/3,wallThickness*2], center=true);
+        }
     }
 }
