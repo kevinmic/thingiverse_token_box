@@ -1,3 +1,4 @@
+$fn=50;
 smallTokenDiameter=11.5;
 largeTokenDiameter=25.5;
 
@@ -6,14 +7,14 @@ tokensBetweenSpacers=5;
 tokenDiameter=largeTokenDiameter;
 tokenWidth=2.3;
 numberOfTokensPerBox=20;
-numberOfBoxes=2;
+numberOfBoxes=3;
 
 
 numberOfTokenSpacers=floor((numberOfTokensPerBox-1)/tokensBetweenSpacers);
 length=tokenWidth * numberOfTokensPerBox + tokenWidth * numberOfTokenSpacers + wallThickness * 2;
 width=tokenDiameter * numberOfBoxes +
       wallThickness * 2 + // left and right side
-      wallThickness/2 * (numberOfBoxes-1); // center spacers
+      wallThickness/2 * (numberOfBoxes); // between tokens
 height=tokenDiameter/2 + wallThickness * 2;  // Extra thick on bottom to deal with spacers
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
@@ -21,23 +22,45 @@ echo("length:", length);
 echo("width:", width);
 echo("height:", height);
 
-
 difference() {
-    translate([0, 0, -height]) {
-        minkowski() {
-            cube([length, width, height], center=false);
-            sphere(1);
-        }
-        
-    }
+    bottomCube(length, width, height);
 
-    translate([wallThickness,wallThickness,0]) {
-        for (i=[0:1:numberOfBoxes-1]) {
-            translate([0,(tokenDiameter/2 + tokenDiameter*i + wallThickness*i/2),0])
-                cylinderWithNotches(diameter=tokenDiameter, length=length-wallThickness*2);
+    translate([-length/2,-width/2+wallThickness-wallThickness,0]) {
+        translate([wallThickness,wallThickness,0]) {
+            for (i=[0:1:numberOfBoxes-1]) {
+                translate([0,(tokenDiameter/2 + tokenDiameter*i + wallThickness*i),0])
+                    cylinderWithNotches(diameter=tokenDiameter, length=length-wallThickness*2);
+            }
         }
     }
+    
+    translate([0,0,-3]) {
+        rotate([180,0,0]) {
+            difference() {
+                bottomCube(length+5, width+5, 5);
+                translate([0,0,2])
+                    bottomCube(length-wallThickness*1.5, width-wallThickness*1.5, 20);   
+            }
+        }
+    }
+    
 }
+
+
+
+module bottomCube(length, width, height) {
+    difference() {
+        minkowski() {
+            cube([length, width, height*2], center=true);
+            sphere(1);
+        }        
+        
+        translate([-10, -10, height])
+            cube([length*2, width*2, height*2], center=true);
+    }
+    
+}
+
 
 module cylinderWithNotches(diameter, length ) {
     rotate([0,90,0])
