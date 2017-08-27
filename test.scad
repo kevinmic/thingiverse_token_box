@@ -4,10 +4,10 @@ largeTokenDiameter=25.5;
 
 wallThickness=2;
 tokensBetweenSpacers=5;
-tokenDiameter=largeTokenDiameter;
+tokenDiameter=smallTokenDiameter;
 tokenWidth=2.3;
 numberOfTokensPerBox=20;
-numberOfBoxes=1;
+numberOfBoxes=2;
 
 
 numberOfTokenSpacers=floor((numberOfTokensPerBox-1)/tokensBetweenSpacers);
@@ -25,29 +25,34 @@ echo("boxLength:", boxLength);
 echo("boxWidth:", boxWidth);
 echo("height:", height);
 
-difference() {
-    // create the bottom cube
-    bottomCube(boxLength, boxWidth, height);
+bottomContainer();
 
-    // Remove the token space
-    translate([0,-tokenDiameter/2*(numberOfBoxes)-(numberOfBoxes-1)*wallThickness/2,0]) {
-        for (i=[0:1:numberOfBoxes-1]) {
-            translate([0,(tokenDiameter/2 + tokenDiameter*i + wallThickness*i),0])
-                cylinderWithNotches(diameter=tokenDiameter, length=cylinderLength);
-        }
-    }
-    
-    // Create a lip on the top
-    translate([0,0,-3]) {
-        rotate([180,0,0]) {
-            difference() {
-                bottomCube(boxLength+5, boxWidth+5, 5);
-                translate([0,0,2])
-                    bottomCube(boxLength-wallThickness*1.5, boxWidth-wallThickness*1.5, 20);   
+module bottomContainer() {
+    difference() {
+        // create the bottom cube
+        bottomCube(boxLength, boxWidth, height);
+
+        // Remove the token space
+        translate([0,-tokenDiameter/2*(numberOfBoxes)-(numberOfBoxes-1)*wallThickness/2,0]) {
+            for (i=[0:1:numberOfBoxes-1]) {
+                translate([0,(tokenDiameter/2 + tokenDiameter*i + wallThickness*i),0])
+                    cylinderWithNotches(diameter=tokenDiameter, length=cylinderLength);
             }
         }
+        
+        // Create a lip on the top
+        translate([0,0,-3]) {
+            rotate([180,0,0]) {
+                difference() {
+                    bottomCube(boxLength+5, boxWidth+5, 5);
+                    translate([0,0,2])
+                        bottomCube(boxLength-wallThickness*1.5, boxWidth-wallThickness*1.5, 20);   
+                }
+            }
+        }
+        translate([0,0,-2.5])
+            cylinderRing(boxLength-wallThickness/2, boxWidth-wallThickness/2, .5);        
     }
-    
 }
 
 
@@ -76,4 +81,16 @@ module cylinderWithNotches(diameter, length) {
                 cube([tokenWidth,diameter/3,wallThickness*2], center=true);
         }
     }
+}
+
+module cylinderRing(length, width, diameter) {
+    scale([1,1,2]) {
+        union() {
+            translate([0,width/2,0]) rotate([0,90,0]) cylinder(d=diameter, h=length, center=true);
+            translate([0,-width/2,0]) rotate([0,90,0]) cylinder(d=diameter, h=length, center=true);
+            translate([length/2,0,0]) rotate([90,90,0]) cylinder(d=diameter, h=width, center=true);
+            translate([-length/2,0,0]) rotate([90,90,0]) cylinder(d=diameter, h=width, center=true);
+        }
+    }
+
 }
