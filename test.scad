@@ -4,11 +4,11 @@ largeTokenDiameter=25.5;
 
 tokensBetweenSpacers=5;
 tokenDiameter=smallTokenDiameter;
-tokenWidth=2.3;
 numberOfTokensPerBox=15;
 numberOfBoxes=3;
 gap=0.1;
 spacerGap=0.95;
+tokenWidth=2.3;
 
 
 wallThickness=2;
