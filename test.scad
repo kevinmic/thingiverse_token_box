@@ -6,14 +6,13 @@ tokensBetweenSpacers=5;
 tokenDiameter=smallTokenDiameter;
 numberOfTokensPerBox=20;
 numberOfBoxes=3;
-gap=0.1;
+gap=0.3;
 spacerGap=0.95;
 tokenWidth=2.3;
 
 
 wallThickness=2;
 roundEdgesDiameter=1;
-
 
 numberOfTokenSpacers=floor((numberOfTokensPerBox-1)/tokensBetweenSpacers);
 cylinderLength=tokenWidth * numberOfTokensPerBox + // tokens
@@ -23,6 +22,7 @@ boxWidth=tokenDiameter * numberOfBoxes +
       wallThickness * 2 + // left and right side
       wallThickness * (numberOfBoxes-1); // between cylinders
 height=tokenDiameter/2 + wallThickness * 2;  // Extra thick on bottom to deal with spacers
+boxLipThickness=wallThickness + roundEdgesDiameter/2; // This would normally be wallThickness but the minkowski applies a half a roundEdgesDiameter to the outside of everything.
 
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
@@ -31,13 +31,14 @@ echo("boxLength:", boxLength);
 echo("boxWidth:", boxWidth);
 echo("height:", height);
 
-bottomContainer();
+**bottomContainer();
 translate([boxLength+5,0,0]) topContainer();
-translate([-(boxLength*.6+tokenDiameter/2),0,-height-roundEdgesDiameter]) tokenSpacer();
+**translate([-(boxLength*.6+tokenDiameter/2),0,-height-roundEdgesDiameter]) tokenSpacer();
 
 module tokenSpacer() {
     width=tokenWidth*spacerGap;
     diameter=tokenDiameter-gap;
+    removeTop=1;
     translate([0,0,width/2]) {
         difference() {
             union() {
@@ -45,25 +46,33 @@ module tokenSpacer() {
                 translate([0,diameter/2,0]) rotate([90,90,0]) 
                     notch(diameter, width);
             }
-            translate([0,-diameter/2,0])
+            // Cut off half the circle + remove top so we can place a rounded top
+            translate([0,-diameter/2+removeTop,0])
                 cube([diameter+1, diameter, width+2], center=true);
+        }
+        // Curve the top edge
+        intersection() {
+           translate([0,removeTop,0]) rotate([0,90,0]) cylinder(d=width, h=diameter, center=true);
+            cylinder(d=diameter, h=width, center=true);
         }
     }
 }
 
 module topContainer() {
     difference() {
-        boxWithCylinderRemoved(boxLength, boxWidth, height, notches=false);
-        translate([0,0,-3]) {
+        boxWithCylinderRemoved(boxLength, boxWidth, height, notches=false, extraHeight=boxLipThickness+gap);
+        translate([0,0,0]) {
             rotate([180,0,0]) {
                 difference() {
-                    bottomCube(boxLength-wallThickness+gap, boxWidth-wallThickness+gap, 5);
+                    bottomCube(boxLength-boxLipThickness+gap, boxWidth-boxLipThickness+gap, 5);
                 }
             }
         }
     }
-    translate([0,0,-0.5])
-        cylinderRing(boxLength+gap, boxWidth+gap, .4, false);        
+    // TODO: Remove magic 0.5 and .1
+    translate([0,0,boxLipThickness-.1])
+        // TODO: Remove magic 0.5 and .4
+        cylinderRing(boxLength+gap-0.5, boxWidth+gap-0.5, .4, false);        
     
 }
 
@@ -77,19 +86,20 @@ module bottomContainer() {
                 difference() {
                     bottomCube(boxLength+5, boxWidth+5, 5);
                     translate([0,0,2])
-                        bottomCube(boxLength-wallThickness*1.5, boxWidth-wallThickness*1.5, 20);   
+                        bottomCube(boxLength-boxLipThickness, boxWidth-boxLipThickness, 20);   
                 }
             }
         }
+        // TODO: Remove magic 2.5
         translate([0,0,-2.5])
             cylinderRing(boxLength-wallThickness/2, boxWidth-wallThickness/2, .5, corners=true);        
     }
 }
 
-module boxWithCylinderRemoved(length, width, height, notches=false) {
+module boxWithCylinderRemoved(length, width, height, notches=false, extraHeight=0) {
     difference() {
             // create the bottom cube
-        bottomCube(length, width, height);
+        bottomCube(length, width, height, extraHeight);
 
         // Remove the token space
         translate([0,-tokenDiameter/2*(numberOfBoxes)-(numberOfBoxes-1)*wallThickness/2,0]) {
@@ -103,14 +113,15 @@ module boxWithCylinderRemoved(length, width, height, notches=false) {
 
 
 
-module bottomCube(length, width, height) {
+module bottomCube(length, width, height, extraHeight=0) {
     difference() {
         minkowski() {
             cube([length, width, height*2], center=true);
             sphere(roundEdgesDiameter);
         }        
         
-        translate([0, 0, height])
+        // cut the other cube in half
+        translate([0, 0, height+extraHeight])
             cube([length*2, width*2, height*2], center=true);
     }
     
