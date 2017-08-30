@@ -1,10 +1,10 @@
 $fn=50;
-smallTokenDiameter=11.5;
+smallTokenDiameter=19.5;
 largeTokenDiameter=25.5;
 
 tokensBetweenSpacers=5;
 tokenDiameter=smallTokenDiameter;
-numberOfTokensPerBox=15;
+numberOfTokensPerBox=20;
 numberOfBoxes=3;
 gap=0.1;
 spacerGap=0.95;
