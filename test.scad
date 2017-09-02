@@ -2,27 +2,30 @@ $fn=50;
 smallTokenDiameter=19.5;
 largeTokenDiameter=25.5;
 
-tokensBetweenSpacers=5;
-tokenDiameter=smallTokenDiameter;
-numberOfTokensPerBox=20;
+whichContainer = 0; // 0 = All, 1 = Bottom, 2 = Top, 3 = Token Spacer
+
+tokensBetweenSpacers=4;
+tokenDiameter=largeTokenDiameter;
+numberOfTokensPerBox=16;
 numberOfBoxes=3;
-gap=0.3;
+gap=0.5;
 spacerGap=0.95;
 tokenWidth=2.3;
 
 
 wallThickness=2;
-roundEdgesDiameter=1;
-
+roundEdgesDiameter=2;
 numberOfTokenSpacers=floor((numberOfTokensPerBox-1)/tokensBetweenSpacers);
 cylinderLength=tokenWidth * numberOfTokensPerBox + // tokens
        tokenWidth * numberOfTokenSpacers; // token spacers
-boxLength = cylinderLength + wallThickness * 2; // end walls
+boxLength =cylinderLength + wallThickness * 2 - roundEdgesDiameter; // end walls
 boxWidth=tokenDiameter * numberOfBoxes +
       wallThickness * 2 + // left and right side
-      wallThickness * (numberOfBoxes-1); // between cylinders
-height=tokenDiameter/2 + wallThickness * 2;  // Extra thick on bottom to deal with spacers
+      wallThickness * (numberOfBoxes-1) // between cylinders
+      - roundEdgesDiameter; 
+height=roundEdgesDiameter/2 + tokenDiameter/2 - roundEdgesDiameter;  
 boxLipThickness=wallThickness + roundEdgesDiameter/2; // This would normally be wallThickness but the minkowski applies a half a roundEdgesDiameter to the outside of everything.
+boxLipDepth=3;
 
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
@@ -30,10 +33,27 @@ echo("cylinderLength:", cylinderLength);
 echo("boxLength:", boxLength);
 echo("boxWidth:", boxWidth);
 echo("height:", height);
+echo("boxLipThickness:", boxLipThickness);
 
-**bottomContainer();
-translate([boxLength+5,0,0]) topContainer();
-**translate([-(boxLength*.6+tokenDiameter/2),0,-height-roundEdgesDiameter]) tokenSpacer();
+
+if (whichContainer == 0) {
+        bottomContainer();
+        translate([boxLength-roundEdgesDiameter+10,0,-roundEdgesDiameter]) topContainer();
+        translate([-(boxLength*.6+tokenDiameter/2),0,-height-roundEdgesDiameter*2]) tokenSpacer();
+}
+if (whichContainer == 1) {
+    bottomContainer();
+}
+if (whichContainer == 2) {
+    difference() {
+        topContainer();
+        translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.5,0.5,2]) import("descent.stl");
+    }
+}
+if (whichContainer == 3) {
+    tokenSpacer();
+}
+    
 
 module tokenSpacer() {
     width=tokenWidth*spacerGap;
@@ -60,7 +80,7 @@ module tokenSpacer() {
 
 module topContainer() {
     difference() {
-        boxWithCylinderRemoved(boxLength, boxWidth, height, notches=false, extraHeight=boxLipThickness+gap);
+        boxWithCylinderRemoved(boxLength, boxWidth, height+.2, notches=false, extraHeight=boxLipDepth);
         translate([0,0,0]) {
             rotate([180,0,0]) {
                 difference() {
@@ -69,19 +89,20 @@ module topContainer() {
             }
         }
     }
-    // TODO: Remove magic 0.5 and .1
-    translate([0,0,boxLipThickness-.1])
+    // TODO: Remove magic 0.6 and .9
+    translate([0,0,boxLipDepth-.9])
         // TODO: Remove magic 0.5 and .4
-        cylinderRing(boxLength+gap-0.5, boxWidth+gap-0.5, .4, false);        
+        cylinderRing(boxLength+gap+1, boxWidth+gap+1, .6, false);        
     
 }
 
 module bottomContainer() {
     difference() {
-        boxWithCylinderRemoved(boxLength, boxWidth, height, notches=true);
+        // Extra height to handle notches
+        boxWithCylinderRemoved(boxLength, boxWidth, height + wallThickness, notches=true);
         
         // Create a lip on the top
-        translate([0,0,-3]) {
+        translate([0,0,-boxLipDepth]) {
             rotate([180,0,0]) {
                 difference() {
                     bottomCube(boxLength+5, boxWidth+5, 5);
@@ -90,9 +111,9 @@ module bottomContainer() {
                 }
             }
         }
-        // TODO: Remove magic 2.5
-        translate([0,0,-2.5])
-            cylinderRing(boxLength-wallThickness/2, boxWidth-wallThickness/2, .5, corners=true);        
+        // TODO: Remove magic numbers (2, 0.5)
+        translate([0,0,-boxLipDepth+.9])
+            cylinderRing(boxLength-wallThickness/2+2, boxWidth-wallThickness/2+2, .6);        
     }
 }
 
@@ -146,20 +167,13 @@ module notch(diameter, width) {
     cube([width,diameter/3,wallThickness*2], center=true);
 }
 
-module cylinderRing(length, width, diameter, corners=false) {
-    scale([1,1,2]) {
+module cylinderRing(length, width, diameter) {
+    scale([1,1,3]) {
         union() {
             translate([0,width/2,0]) rotate([0,90,0]) cylinder(d=diameter, h=length, center=true);
             translate([0,-width/2,0]) rotate([0,90,0]) cylinder(d=diameter, h=length, center=true);
             translate([length/2,0,0]) rotate([90,90,0]) cylinder(d=diameter, h=width, center=true);
             translate([-length/2,0,0]) rotate([90,90,0]) cylinder(d=diameter, h=width, center=true);
-
-            if (corners) {
-                translate([length/2-0.3,width/2-0.3,0]) rotate([45,90,0]) cylinder(d=diameter, h=5, center=true);
-                translate([length/2-0.3,-(width/2-0.3),0]) rotate([-45,90,0]) cylinder(d=diameter, h=5, center=true);
-                translate([-(length/2-0.3),width/2-0.3,0]) rotate([-45,90,0]) cylinder(d=diameter, h=5, center=true);
-                translate([-(length/2-0.3),-(width/2-0.3),0]) rotate([45,90,0]) cylinder(d=diameter, h=5, center=true);
-            }
         }
     }
 
