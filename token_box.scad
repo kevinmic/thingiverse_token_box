@@ -1,33 +1,51 @@
+// smalltoken_diameter=19.5;
+// largetoken_diameter=25.5;
 
-/* Global */
+/* [Global] */
 part = "all"; // [all:Bottom/Top/Spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
 
-numberOfTokenGroups=3; // How many token groups
-numberOfTokensPerGroup=20; // How many tokens per group
-numberOfTokensBetweenSpacers=5; // How many tokens between spacers
-tokenDiameter=19.5; // Token Diameter
-tokenWidth=2.3; // Token Width
-lidGap=0.5; // Gap between top and bottom
+/* [Box Settings] */
+// Shape of the token
+token_shape = "circle"; // [circle:Circle Tokens, square:Square Tokens, hexagon:6 Sided Token, octagon:Stop Sign Token]
+// How many token groups
+number_of_token_groups=3; 
+// How many tokens per group
+number_of_tokens_per_group=20; 
+// How many tokens between spacers
+number_of_tokens_between_spacers=5; 
+
+/* [Token Settings] */
+// Token Diameter
+token_diameter=19.5; 
+// Token Width
+token_width=2.3; 
+
+/* [Other] */
+// Gap between top and bottom
+lid_gap=0.5; 
+
 
 /* [Hidden] */
-// smallTokenDiameter=19.5;
-// largeTokenDiameter=25.5;
-
 $fn=50;
-spacerGap=0.95;
-wallThickness=2;
-roundEdgesDiameter=2;
-numberOfTokenSpacers=floor((numberOfTokensPerGroup-1)/numberOfTokensBetweenSpacers);
-cylinderLength=tokenWidth * numberOfTokensPerGroup + // tokens
-       tokenWidth * numberOfTokenSpacers; // token spacers
+spacerGap=0.95; // Spacer Gap percentage
+wallThickness=2; // Changing this will likly cause problems.
+roundEdgesDiameter=2;  // Changing this will likly cause problems.
+boxLipDepth=3;  // Changing this might cause problems.
+
+// How many token spacers need to be printer per group
+numberOfTokenSpacers=floor((number_of_tokens_per_group-1)/number_of_tokens_between_spacers);
+// Total Cylinder Length
+cylinderLength=token_width * number_of_tokens_per_group + // tokens
+       token_width * numberOfTokenSpacers; // token spacers
+// Total Box Length
 boxLength =cylinderLength + wallThickness * 2 - roundEdgesDiameter; // end walls
-boxWidth=tokenDiameter * numberOfTokenGroups +
+// Total Box Width
+boxWidth=token_diameter * number_of_token_groups +
       wallThickness * 2 + // left and right side
-      wallThickness * (numberOfTokenGroups-1) // between cylinders
+      wallThickness * (number_of_token_groups-1) // between cylinders
       - roundEdgesDiameter; 
-height=roundEdgesDiameter/2 + tokenDiameter/2 - roundEdgesDiameter;  
+height=roundEdgesDiameter/2 + token_diameter/2 - roundEdgesDiameter;  
 boxLipThickness=wallThickness + roundEdgesDiameter/2; // This would normally be wallThickness but the minkowski applies a half a roundEdgesDiameter to the outside of everything.
-boxLipDepth=3;
 
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
@@ -42,8 +60,14 @@ print_part();
 module print_part() {
     if (part == "all") {
             bottomContainer();
-            translate([boxLength-roundEdgesDiameter+10,0,-roundEdgesDiameter]) topContainer();
-            translate([-(boxLength*.6+tokenDiameter/2),0,-height-roundEdgesDiameter*2]) tokenSpacer();
+            translate([boxLength-roundEdgesDiameter+10,0,-roundEdgesDiameter]) {
+                difference() {
+                    topContainer();
+                    //translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.5,0.5,2]) import("descent.stl");
+                }
+            }
+
+            translate([-(boxLength*.6+token_diameter/2),0,-height-roundEdgesDiameter*2]) tokenSpacer();
     }
     if (part == "bottom") {
         bottomContainer();
@@ -51,7 +75,7 @@ module print_part() {
     if (part == "top") {
         difference() {
             topContainer();
-            translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.5,0.5,2]) import("descent.stl");
+            //translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.5,0.5,2]) import("descent.stl");
         }
     }
     if (part == "spacer") {
@@ -61,13 +85,14 @@ module print_part() {
     
 
 module tokenSpacer() {
-    width=tokenWidth*spacerGap;
-    diameter=tokenDiameter-lidGap;
+    width=token_width*spacerGap;
+    diameter=token_diameter-lid_gap;
     removeTop=1;
     translate([0,0,width/2]) {
         difference() {
             union() {
-                cylinder(d=diameter, h=width, center=true);
+                
+printShape(diameter=diameter, height=width);
                 translate([0,diameter/2,0]) rotate([90,90,0]) 
                     notch(diameter, width);
             }
@@ -77,19 +102,21 @@ module tokenSpacer() {
         }
         // Curve the top edge
         intersection() {
-           translate([0,removeTop,0]) rotate([0,90,0]) cylinder(d=width, h=diameter, center=true);
-            cylinder(d=diameter, h=width, center=true);
+            translate([0,removeTop,0]) rotate([0,90,0]) {
+                cylinder(d=width, h=diameter, center=true);
+            }
+            printShape(diameter=diameter, height=width);
         }
     }
 }
 
 module topContainer() {
     difference() {
-        boxWithCylinderRemoved(boxLength, boxWidth, height+.2, notches=false, extraHeight=boxLipDepth);
+        boxWithShapeRemoved(boxLength, boxWidth, height+.2, notches=false, extraHeight=boxLipDepth);
         translate([0,0,0]) {
             rotate([180,0,0]) {
                 difference() {
-                    bottomCube(boxLength-boxLipThickness+lidGap, boxWidth-boxLipThickness+lidGap, 5);
+                    bottomCube(boxLength-boxLipThickness+lid_gap, boxWidth-boxLipThickness+lid_gap, 5);
                 }
             }
         }
@@ -97,14 +124,14 @@ module topContainer() {
     // TODO: Remove magic 0.6 and .9
     translate([0,0,boxLipDepth-.9])
         // TODO: Remove magic 0.5 and .4
-        cylinderRing(boxLength+lidGap+1, boxWidth+lidGap+1, .6, false);        
+        cylinderRing(boxLength+lid_gap+1, boxWidth+lid_gap+1, .6, false);        
     
 }
 
 module bottomContainer() {
     difference() {
         // Extra height to handle notches
-        boxWithCylinderRemoved(boxLength, boxWidth, height + wallThickness, notches=true);
+        boxWithShapeRemoved(boxLength, boxWidth, height + wallThickness, notches=true);
         
         // Create a lip on the top
         translate([0,0,-boxLipDepth]) {
@@ -122,22 +149,20 @@ module bottomContainer() {
     }
 }
 
-module boxWithCylinderRemoved(length, width, height, notches=false, extraHeight=0) {
+module boxWithShapeRemoved(length, width, height, notches=false, extraHeight=0) {
     difference() {
             // create the bottom cube
         bottomCube(length, width, height, extraHeight);
 
         // Remove the token space
-        translate([0,-tokenDiameter/2*(numberOfTokenGroups)-(numberOfTokenGroups-1)*wallThickness/2,0]) {
-            for (i=[0:1:numberOfTokenGroups-1]) {
-                translate([0,(tokenDiameter/2 + tokenDiameter*i + wallThickness*i),0])
-                    cylinderWithNotches(diameter=tokenDiameter, length=cylinderLength, notches=notches);
+        translate([0,-token_diameter/2*(number_of_token_groups)-(number_of_token_groups-1)*wallThickness/2,0]) {
+            for (i=[0:1:number_of_token_groups-1]) {
+                translate([0,(token_diameter/2 + token_diameter*i + wallThickness*i),0])
+                    printShapeWithNotches(diameter=token_diameter, length=cylinderLength, notches=notches);
             }
         }
     }
 }
-
-
 
 module bottomCube(length, width, height, extraHeight=0) {
     difference() {
@@ -154,15 +179,15 @@ module bottomCube(length, width, height, extraHeight=0) {
 }
 
 
-module cylinderWithNotches(diameter, length, notches) {
+module printShapeWithNotches(diameter, length, notches) {
     translate([-length/2,0,0]) { 
-        rotate([0,90,0])
-            cylinder(d=diameter,h=length);
+        rotate([0,90,0]) translate([0,0,length/2])
+            printShape(diameter=diameter, height=length);
 
         if (notches) {
             for (i=[1:1:numberOfTokenSpacers]) {
-                translate([i * (numberOfTokensBetweenSpacers+1) * tokenWidth - tokenWidth/2, 0, -diameter/2])
-                    notch(diameter, tokenWidth);
+                translate([i * (number_of_tokens_between_spacers+1) * token_width - token_width/2, 0, -diameter/2])
+                    notch(diameter, token_width);
             }
         }
     }
@@ -172,6 +197,23 @@ module notch(diameter, width) {
     cube([width,diameter/3,wallThickness*2], center=true);
 }
 
+module printShape(diameter, height) {
+    if (token_shape == "circle") {
+        cylinder(d=diameter, h=height, center=true);
+    }
+    if (token_shape == "square") {
+        cube([diameter, diameter, height], center=true);
+    }
+    if (token_shape == "hexagon") {
+        rotate([0,0,30])
+            cylinder(d=diameter, h=height, center=true, $fn=6);
+    }
+    if (token_shape == "octagon") {
+        rotate([0,0,22.5])
+            cylinder(d=diameter, h=height, center=true, $fn=8);
+    }
+}
+            
 module cylinderRing(length, width, diameter) {
     scale([1,1,3]) {
         union() {
