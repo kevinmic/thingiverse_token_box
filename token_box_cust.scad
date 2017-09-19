@@ -7,7 +7,7 @@
 part = "all"; // [all:Bottom/Top/Spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
 
 // List of [["Shape", Diameter]].   Possible shapes are circle, square, hexagon, octagon]
-tokensList = [["circle",30], ["square",10], ["hexagon",19.5], ["octagon", 30]];
+tokensList = [["circle",30], ["square",10], ["hexagon",19.5], ["octagon", 30], ["rectangle", [20,20]]];
 
 // How many tokens per group
 number_of_tokens_per_group=34; 
@@ -28,7 +28,7 @@ dIndex=1;
 
 // How many token groups
 number_of_token_groups=len(tokensList); 
-max_token_diameter=max(v=tokensList,p=dIndex); 
+max_token_diameter=maxTokenHeight(v=tokensList); 
 
 spacerGap=0.95; // Spacer Gap percentage
 wallThickness=2; // Changing this will likly cause problems.
@@ -43,7 +43,7 @@ cylinderLength=max_token_width * number_of_tokens_per_group + // tokens
 // Total Box Length
 boxLength = cylinderLength + wallThickness * 2 - roundEdgesDiameter; // end walls
 // Total Box Width
-boxWidth=sum(tokensList, dIndex) +
+boxWidth=sumTokenWidths(tokensList) +
       wallThickness * 2 + // left and right side
       wallThickness * (number_of_token_groups-1) // between cylinders
       - roundEdgesDiameter; 
@@ -87,25 +87,28 @@ module print_part() {
     
 
 module tokenSpacer() {
-    translate([0,-sum(v=tokensList, p=dIndex)/2,0]) {
+    translate([0,-sumTokenWidths(v=tokensList)/2,0]) {
         for (i=[0:1:number_of_token_groups-1]) {
-            translate([0,sumTo(v=tokensList,p=dIndex,maxI=i)/2 + i*4,0.9]) {
-                tokenSpacerParamsDefined(width=max_token_width*spacerGap, diameter=tokensList[i][dIndex]-lid_gap, shape=tokensList[i][sIndex]);
+            translate([0,sumToTokenWidths(v=tokensList,maxI=i)/2 + i*4,0.9]) {
+                tokenSpacerParamsDefined(token=tokensList[i], width=max_token_width*spacerGap);
             }
         }
     }
 }
 
-module tokenSpacerParamsDefined(width, diameter, shape) {
+module tokenSpacerParamsDefined(token, width) {
     removeTop=1;
+    diameter = tokenDiameter(token)-lid_gap;
+    height = tokenHeight(token);
+
     difference() {
         union() {                
             // todo
-            printShape(diameter=diameter, height=width, shape=shape, isSpacer=true);
-            translate([0,diameter/2,0]) rotate([90,90,0]) 
+            printShape(token=token, height=width, isSpacer=true);
+            translate([0,height/2,0]) rotate([90,90,0]) 
                 notch(diameter, width);
         }
-        // Cut off half the circle + remove top so we can place a rounded top
+        // Cut off half + remove top so we can place a rounded top
         translate([0,-diameter/2+removeTop,0])
             cube([diameter+1, diameter, width+2], center=true);
     }
@@ -114,7 +117,7 @@ module tokenSpacerParamsDefined(width, diameter, shape) {
         translate([0,removeTop,0]) rotate([0,90,0]) {
             cylinder(d=width, h=diameter, center=true);
         }
-        printShape(diameter=diameter, height=width, shape=shape, isSpacer=true);
+        printShape(token=token, height=width, isSpacer=true);
     }
 }
 
@@ -161,10 +164,10 @@ module boxWithShapeRemoved(length, width, height, notches=false, extraHeight=0) 
         bottomCube(length, width, height, extraHeight);
 
         // Remove the token space
-        translate([0,-sum(v=tokensList, p=dIndex)/2-(number_of_token_groups-1)*wallThickness/2,0]) {
+        translate([0,-sumTokenWidths(v=tokensList)/2-(number_of_token_groups-1)*wallThickness/2,0]) {
             for (i=[0:1:number_of_token_groups-1]) {
-                translate([0,(tokensList[i][dIndex]/2 + rsum(v=tokensList, p=dIndex, i=i-1) + wallThickness*i),0])
-                    printShapeWithNotches(diameter=tokensList[i][dIndex], length=cylinderLength, shape=tokensList[i][sIndex], notches=notches);
+                translate([0,(tokenDiameter(tokensList[i])/2 + rsumTokenWidths(v=tokensList, i=i-1) + wallThickness*i),0])
+                    printShapeWithNotches(token=tokensList[i], length=cylinderLength, notches=notches);
             }
         }
     }
@@ -185,14 +188,16 @@ module bottomCube(length, width, height, extraHeight=0) {
 }
 
 
-module printShapeWithNotches(diameter, length, shape, notches) {
+module printShapeWithNotches(token, length, notches) {
+    diameter = tokenDiameter(token);
+    height = tokenHeight(token);
     translate([-length/2,0,0]) { 
         rotate([0,90,0]) translate([0,0,length/2])
-            printShape(diameter=diameter, height=length, shape=shape);
+            printShape(token=token, height=length);
 
         if (notches) {
             for (i=[1:1:numberOfTokenSpacers]) {
-                translate([i * (number_of_tokens_between_spacers+1) * max_token_width - max_token_width/2, 0, -diameter/2])
+                translate([i * (number_of_tokens_between_spacers+1) * max_token_width - max_token_width/2, 0, -height/2])
                     notch(diameter, max_token_width);
             }
         }
@@ -203,15 +208,23 @@ module notch(diameter, width) {
     cube([width,diameter/3,wallThickness*2], center=true);
 }
 
-module printShape(diameter, height, shape, isSpacer=false) {
+module printShape(token, height, isSpacer=false) {
+    shape=token[sIndex];
+    diameter=tokenDiameter(token)-(isSpacer?lid_gap:0);
     if (shape == "circle") {
         cylinder(d=diameter, h=height, center=true);
     }
     if (shape == "square") {
         cube([diameter, diameter, height], center=true);
     }
-    if (shape == "square") {
-        cube([diameter, diameter, height], center=true);
+    if (shape == "rectangle") {
+        if (isSpacer) {
+            rotate([0,0,90])
+                cube([tokenHeight(token), diameter, height], center=true);
+        }
+        else {
+            cube([tokenHeight(token), diameter, height], center=true);
+        }
     }
     if (shape == "hexagon") {
         if (isSpacer) {
@@ -241,10 +254,11 @@ module cylinderRing(length, width, diameter) {
     }
 }
 
-// This assumes a vector looking like this -- [[],[]]
-function sum(v, p, i = 0, r = 0) = i < len(v) ? sum(v, p, i + 1, r + v[i][p]) : r;
-function sumTo(v, p, i = 0, r = 0, maxI) = i < maxI ? sumTo(v=v, p=p, i=i + 1, r=r + v[i][p], maxI=maxI) : r;
-function rsum(v, p, i, r = 0) = i >= 0 ? rsum(v, p, i - 1, r + v[i][p]) : r;
-// This assumes a vector looking like this -- [[],[]]
+function sumTokenWidths(v, i = 0, r = 0) = i < len(v) ? sumTokenWidths(v, i + 1, r + tokenDiameter(v[i])) : r;
+function sumToTokenWidths(v, i = 0, r = 0, maxI) = i < maxI ? sumToTokenWidths(v=v, i=i + 1, r=r + tokenDiameter(v[i]), maxI=maxI) : r;
+function rsumTokenWidths(v, i, r = 0) = i >= 0 ? rsumTokenWidths(v, i - 1, r + tokenDiameter(v[i])) : r;
 
-function max(v, p, i = 0, m = 0) = i < len(v) ? max(v, p, i + 1, m < v[i][p] ? v[i][p] : m) : m;
+
+function maxTokenHeight(v, i = 0, m = 0) = i < len(v) ? maxTokenHeight(v, i + 1, m < tokenHeight(v[i]) ? tokenHeight(v[i]) : m) : m;
+function tokenDiameter(token) = token[sIndex] == "rectangle"? token[dIndex][0] : token[dIndex];
+function tokenHeight(token) = token[sIndex] == "rectangle"? token[dIndex][1] : token[dIndex];
