@@ -4,39 +4,42 @@
 // TODO: Play with images, Play with preview rotation
 
 /* [Global] */
-part = "all"; // [all:Bottom/Top/Spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
+part = "all"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
 
-// List of [["Shape", Diameter]].   Possible shapes are circle, square, hexagon, octagon]
-tokensList = [["circle",30], ["square",10], ["hexagon",19.5], ["octagon", 30], ["rectangle", [20,20]]];
+// List of [[Shape, Diameter]].   Examples - ["circle",20], ["square",20] , ["hexagon",20], ["octagon", 20], ["rectagle", [width, height]]
+tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19], ["rectangle", [21.7, 19.4]], ["circle", 22.5], ["circle",19.2]];
 
 // How many tokens per group
-number_of_tokens_per_group=34; 
+number_of_tokens_per_group=15; 
 // How many tokens between spacers
-number_of_tokens_between_spacers=5; 
+number_of_tokens_between_spacers_default=5; 
 
 /* [Other] */
 // Token Width
 max_token_width=2.3; 
-// Gap between top and bottom
-lid_gap=0.5; 
+// Gap between top lid and bottom
+lid_gap=0.6; 
 $fn=50;
 
 /* [Hidden] */
 // Index locations inside tokensList
 sIndex=0;
 dIndex=1;
+numberOfSpacersIndex=2;
 
 // How many token groups
 number_of_token_groups=len(tokensList); 
-max_token_diameter=maxTokenHeight(v=tokensList); 
+max_token_height=maxTokenHeight(v=tokensList); 
+max_token_diameter=maxTokenDiameter(v=tokensList); 
 
 spacerGap=0.95; // Spacer Gap percentage
 wallThickness=2; // Changing this will likly cause problems.
 roundEdgesDiameter=2;  // Changing this will likly cause problems.
 boxLipDepth=3;  // Changing this might cause problems.
 
+
 // How many token spacers need to be printer per group
-numberOfTokenSpacers=floor((number_of_tokens_per_group-1)/number_of_tokens_between_spacers);
+numberOfTokenSpacers=floor((number_of_tokens_per_group-1)/number_of_tokens_between_spacers_default);
 // Total Cylinder Length
 cylinderLength=max_token_width * number_of_tokens_per_group + // tokens
        max_token_width * numberOfTokenSpacers; // token spacers
@@ -47,7 +50,7 @@ boxWidth=sumTokenWidths(tokensList) +
       wallThickness * 2 + // left and right side
       wallThickness * (number_of_token_groups-1) // between cylinders
       - roundEdgesDiameter; 
-height=roundEdgesDiameter/2 + max_token_diameter/2 - roundEdgesDiameter;  
+height=roundEdgesDiameter/2 + max_token_height/2 - roundEdgesDiameter;  
 boxLipThickness=wallThickness + roundEdgesDiameter/2; // This would normally be wallThickness but the minkowski applies a half a roundEdgesDiameter to the outside of everything.
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
@@ -65,7 +68,7 @@ module print_part() {
             translate([boxLength-roundEdgesDiameter+10,0,-roundEdgesDiameter]) {
                 difference() {
                     topContainer();
-                    //translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.5,0.5,2]) import("descent.stl");
+                    translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.8,0.8,2]) import("xwing.stl");
                 }
             }
 
@@ -77,7 +80,7 @@ module print_part() {
     if (part == "top") {
         difference() {
             topContainer();
-            //translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.5,0.5,2]) import("descent.stl");
+            translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.8,0.8,2]) import("xwing.stl");
         }
     }
     if (part == "spacer") {
@@ -105,17 +108,17 @@ module tokenSpacerParamsDefined(token, width) {
         union() {                
             // todo
             printShape(token=token, height=width, isSpacer=true);
-            translate([0,height/2,0]) rotate([90,90,0]) 
-                notch(diameter, width);
+            translate([0,wallThickness,0]) rotate([90,90,0]) 
+                notch(diameter, width, spacer=true);
         }
         // Cut off half + remove top so we can place a rounded top
         translate([0,-diameter/2+removeTop,0])
-            cube([diameter+1, diameter, width+2], center=true);
+            cube([diameter*2, diameter, width+2], center=true);
     }
     // Curve the top edge
     intersection() {
         translate([0,removeTop,0]) rotate([0,90,0]) {
-            cylinder(d=width, h=diameter, center=true);
+            cylinder(d=width, h=diameter*2, center=true);
         }
         printShape(token=token, height=width, isSpacer=true);
     }
@@ -191,26 +194,32 @@ module bottomCube(length, width, height, extraHeight=0) {
 module printShapeWithNotches(token, length, notches) {
     diameter = tokenDiameter(token);
     height = tokenHeight(token);
+    numberOfTokensPerSpacerForThisToken = tokenSpacers(token);
+    numberOfSpacers = floor(length / ((numberOfTokensPerSpacerForThisToken+1) * max_token_width));
+
     translate([-length/2,0,0]) { 
         rotate([0,90,0]) translate([0,0,length/2])
             printShape(token=token, height=length);
 
         if (notches) {
-            for (i=[1:1:numberOfTokenSpacers]) {
-                translate([i * (number_of_tokens_between_spacers+1) * max_token_width - max_token_width/2, 0, -height/2])
+            for (i=[1:1:numberOfSpacers]) {
+                translate([i * (numberOfTokensPerSpacerForThisToken+1) * max_token_width - max_token_width/2, 0, -height/2])
                     notch(diameter, max_token_width);
             }
         }
     }
 }
 
-module notch(diameter, width) {
-    cube([width,diameter/3,wallThickness*2], center=true);
+module notch(diameter, width, spacer=false) {
+    cube([width,diameter/3, spacer? diameter : wallThickness*2], center=true);
+
 }
 
 module printShape(token, height, isSpacer=false) {
     shape=token[sIndex];
-    diameter=tokenDiameter(token)-(isSpacer?lid_gap:0);
+    removeLidGap=isSpacer?lid_gap:0;
+    diameter=tokenDiameter(token)-removeLidGap;
+    tokenHeight=tokenHeight(token)-removeLidGap;
     if (shape == "circle") {
         cylinder(d=diameter, h=height, center=true);
     }
@@ -220,25 +229,29 @@ module printShape(token, height, isSpacer=false) {
     if (shape == "rectangle") {
         if (isSpacer) {
             rotate([0,0,90])
-                cube([tokenHeight(token), diameter, height], center=true);
+                cube([tokenHeight, diameter, height], center=true);
         }
         else {
-            cube([tokenHeight(token), diameter, height], center=true);
+            cube([tokenHeight, diameter, height], center=true);
         }
     }
     if (shape == "hexagon") {
+        // I have changed tokenDiameter to reflect the width of the hex token (wich is diamteter * 1.15).   But I don't want to use that when I actually generate the shape.   Instead I will use height which is the origional diameter.
         if (isSpacer) {
-            cylinder(d=diameter, h=height, center=true, $fn=6);
+            for (r = [-60, 0, 60]) rotate([0,0,r]) cube([tokenHeight/1.75, tokenHeight, height], true);
         }
         else {
             rotate([0,0,30])
-                cylinder(d=diameter, h=height, center=true, $fn=6);
+                for (r = [-60, 0, 60]) rotate([0,0,r]) cube([tokenHeight/1.75, tokenHeight, height], true);
         }
     }
     if (shape == "octagon") {
-        intersection() {
-            cube([diameter, diameter, height], center=true);
-            rotate([0,0,45]) cube([diameter, diameter, height], center=true);
+        rotate([0,0,20]) {
+            intersection() {
+                octagonDiameterFinder=1.085;
+                cube([diameter/octagonDiameterFinder, diameter/octagonDiameterFinder, height], center=true);
+                rotate([0,0,45]) cube([diameter/octagonDiameterFinder, diameter/octagonDiameterFinder, height], center=true);
+            }
         }
     }
 }
@@ -260,5 +273,11 @@ function rsumTokenWidths(v, i, r = 0) = i >= 0 ? rsumTokenWidths(v, i - 1, r + t
 
 
 function maxTokenHeight(v, i = 0, m = 0) = i < len(v) ? maxTokenHeight(v, i + 1, m < tokenHeight(v[i]) ? tokenHeight(v[i]) : m) : m;
-function tokenDiameter(token) = token[sIndex] == "rectangle"? token[dIndex][0] : token[dIndex];
-function tokenHeight(token) = token[sIndex] == "rectangle"? token[dIndex][1] : token[dIndex];
+
+function maxTokenDiameter(v, i = 0, m = 0) = i < len(v) ? maxTokenDiameter(v, i + 1, m < tokenDiameter(v[i]) ? tokenDiameter(v[i]) : m) : m;
+
+function tokenDiameter(token) = token[sIndex] == "rectangle"? token[dIndex][0] : token[sIndex] == "hexagon" ? token[dIndex] * 1.15 : token[sIndex] == "octagon"? token[dIndex] * 1.085 : token[dIndex];
+
+function tokenHeight(token) = token[sIndex] == "rectangle"? token[dIndex][1] : token[sIndex] == "octagon" ? token[dIndex] * 1.085 : token[dIndex];
+
+function tokenSpacers(token) = token[numberOfSpacersIndex] ? token[numberOfSpacersIndex] : number_of_tokens_between_spacers_default;
