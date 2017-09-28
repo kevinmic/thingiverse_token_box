@@ -106,10 +106,9 @@ module tokenSpacerParamsDefined(token, width) {
 
     difference() {
         union() {                
-            // todo
             printShape(token=token, height=width, isSpacer=true);
             translate([0,wallThickness,0]) rotate([90,90,0]) 
-                notch(diameter, width, spacer=true);
+                notch(diameter, width, height, spacer=true);
         }
         // Cut off half + remove top so we can place a rounded top
         translate([0,-diameter/2+removeTop,0])
@@ -210,8 +209,8 @@ module printShapeWithNotches(token, length, notches) {
     }
 }
 
-module notch(diameter, width, spacer=false) {
-    cube([width,diameter/3, spacer? diameter : wallThickness*2], center=true);
+module notch(diameter, width, height, spacer=false) {
+    cube([width,diameter/3, spacer? height : wallThickness*2], center=true);
 
 }
 
