@@ -6,7 +6,7 @@
 /* [Global] */
 part = "all"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
 
-// List of [[Shape, Diameter]].   Examples - ["circle",20], ["square",20] , ["hexagon",20], ["octagon", 20], ["rectagle", [width, height]]
+// List of [[Shape, Diameter]].   Examples - ["circle",20], ["square",20] , ["hexagon",20], ["octagon", 20], ["rectagle", [width, height]], ["diamond", [width, height]]
 tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19], ["rectangle", [21.7, 19.4]], ["circle", 22.5], ["circle",19.2]];
 
 // How many tokens per group
@@ -92,10 +92,10 @@ module print_part() {
 
 
 module tokenSpacer() {
-    translate([0,-sumTokenWidths(v=tokensList)/2,0]) {
+    translate([0,-sumTokenHeights(v=tokensList)/2,0]) {
         for (i=[0:1:number_of_token_groups-1]) {
             if (tokenSpacers(tokensList[i]) > 0) {
-                translate([0,sumToTokenWidths(v=tokensList,maxI=i)/2 + i*4,0.9]) {
+                translate([0,sumToTokenHeights(v=tokensList,maxI=i)/2 + i*4,0.9]) {
                     tokenSpacerParamsDefined(token=tokensList[i], width=max_token_width*spacerGap);
                 }
             }
@@ -219,15 +219,15 @@ module printShapeWithNotches(token, length, notches) {
 
         if (notches && numberOfTokensPerSpacerForThisToken > 0) {
             for (i=[1:1:numberOfSpacers]) {
-                translate([i * (numberOfTokensPerSpacerForThisToken+1) * max_token_width - max_token_width/2, 0, -height/2])
-                    notch(diameter, max_token_width);
+                translate([i * (numberOfTokensPerSpacerForThisToken+1) * max_token_width - max_token_width/2, 0, -wallThickness])
+                    notch(diameter, max_token_width, height);
             }
         }
     }
 }
 
 module notch(diameter, width, height, spacer=false) {
-    cube([width,diameter/3, spacer? height : wallThickness*2], center=true);
+    cube([width,diameter/3, height], center=true);
 }
 
 module printShape(token, height, isSpacer=false) {
@@ -270,6 +270,8 @@ module cylinderRing(length, width, diameter) {
 function sumTokenWidths(v, i = 0, r = 0) = i < len(v) ? sumTokenWidths(v, i + 1, r + tokenDiameter(v[i])) : r;
 function sumToTokenWidths(v, i = 0, r = 0, maxI) = i < maxI ? sumToTokenWidths(v=v, i=i + 1, r=r + tokenDiameter(v[i]), maxI=maxI) : r;
 function rsumTokenWidths(v, i, r = 0) = i >= 0 ? rsumTokenWidths(v, i - 1, r + tokenDiameter(v[i])) : r;
+function sumTokenHeights(v, i = 0, r = 0) = i < len(v) ? sumTokenHeights(v, i + 1, r + tokenHeight(v[i])) : r;
+function sumToTokenHeights(v, i = 0, r = 0, maxI) = i < maxI ? sumToTokenHeights(v=v, i=i + 1, r=r + tokenHeight(v[i]), maxI=maxI) : r;
 
 
 function maxTokenHeight(v, i = 0, m = 0) = i < len(v) ? maxTokenHeight(v, i + 1, m < tokenHeight(v[i]) ? tokenHeight(v[i]) : m) : m;
