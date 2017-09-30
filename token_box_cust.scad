@@ -53,7 +53,7 @@ height=roundEdgesDiameter/2 + max_token_height/2 - roundEdgesDiameter;
 boxLipThickness=wallThickness + roundEdgesDiameter/2; // This would normally be wallThickness but the minkowski applies a half a roundEdgesDiameter to the outside of everything.
 
 // Change this for putting a stencil on top of the lid box.   About a 2mm thick stl is what is expected.
-surface_image_stl="xwing.stl";
+surface_image_stl="xwing/xwing.stl";
 surface_image_rotate=[0,180,90];
 surface_image_translate=[0,0,-height-1.5];
 surface_image_scale=[0.8,0.8,2];
