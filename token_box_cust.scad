@@ -115,8 +115,8 @@ module tokenSpacerParamsDefined(token, width) {
                 notch(diameter, width, height, spacer=true);
         }
         // Cut off half + remove top so we can place a rounded top
-        translate([0,-diameter/2+removeTop,0])
-            cube([diameter*2, diameter, width+2], center=true);
+        translate([0,-diameter+removeTop,0])
+            cube([diameter*2, diameter*2, width+2], center=true);
     }
     // Curve the top edge
     intersection() {
@@ -214,7 +214,7 @@ module printShapeWithNotches(token, length, notches) {
     numberOfSpacers = floor(length / ((numberOfTokensPerSpacerForThisToken+1) * max_token_width));
 
     translate([-length/2,0,0]) { 
-        rotate([0,90,0]) translate([0,0,length/2])
+        rotate([90,0,0]) rotate([0,90,0]) translate([0,0,length/2])
             printShape(token=token, height=length);
 
         if (notches && numberOfTokensPerSpacerForThisToken > 0) {
@@ -228,7 +228,6 @@ module printShapeWithNotches(token, length, notches) {
 
 module notch(diameter, width, height, spacer=false) {
     cube([width,diameter/3, spacer? height : wallThickness*2], center=true);
-
 }
 
 module printShape(token, height, isSpacer=false) {
@@ -243,32 +242,17 @@ module printShape(token, height, isSpacer=false) {
         cube([diameter, diameter, height], center=true);
     }
     if (shape == "rectangle") {
-        if (isSpacer) {
-            rotate([0,0,90])
-                cube([tokenHeight, diameter, height], center=true);
-        }
-        else {
+        rotate([0,0,90])
             cube([tokenHeight, diameter, height], center=true);
-        }
     }
     if (shape == "hexagon") {
-        // I have changed tokenDiameter to reflect the width of the hex token (wich is diamteter * 1.15).   But I don't want to use that when I actually generate the shape.   Instead I will use height which is the origional diameter.
-        if (isSpacer) {
-            for (r = [-60, 0, 60]) rotate([0,0,r]) cube([tokenHeight/1.75, tokenHeight, height], true);
-        }
-        else {
-            rotate([0,0,30])
-                for (r = [-60, 0, 60]) rotate([0,0,r]) cube([tokenHeight/1.75, tokenHeight, height], true);
-        }
+        hexagon(tokenHeight, height);
     }
     if (shape == "octagon") {
-        rotate([0,0,20]) {
-            intersection() {
-                octagonDiameterFinder=1.085;
-                cube([diameter/octagonDiameterFinder, diameter/octagonDiameterFinder, height], center=true);
-                rotate([0,0,45]) cube([diameter/octagonDiameterFinder, diameter/octagonDiameterFinder, height], center=true);
-            }
-        }
+        octagon(diameter, height);
+    }
+    if (shape == "diamond") {
+        diamond([diameter, tokenHeight, height], center=true);
     }
 }
             
@@ -292,8 +276,66 @@ function maxTokenHeight(v, i = 0, m = 0) = i < len(v) ? maxTokenHeight(v, i + 1,
 
 function maxTokenDiameter(v, i = 0, m = 0) = i < len(v) ? maxTokenDiameter(v, i + 1, m < tokenDiameter(v[i]) ? tokenDiameter(v[i]) : m) : m;
 
-function tokenDiameter(token) = token[sIndex] == "rectangle"? token[dIndex][0] : token[sIndex] == "hexagon" ? token[dIndex] * 1.15 : token[sIndex] == "octagon"? token[dIndex] * 1.085 : token[dIndex];
+function tokenDiameter(token) = token[sIndex] == "rectangle" || token[sIndex] == "diamond" ? token[dIndex][0] : token[sIndex] == "hexagon" ? token[dIndex] * 1.15 : token[sIndex] == "octagon"? token[dIndex] * 1.085 : token[dIndex];
 
-function tokenHeight(token) = token[sIndex] == "rectangle"? token[dIndex][1] : token[sIndex] == "octagon" ? token[dIndex] * 1.085 : token[dIndex];
+function tokenHeight(token) = token[sIndex] == "rectangle" || token[sIndex] == "diamond" ? token[dIndex][1] : token[sIndex] == "octagon" ? token[dIndex] * 1.085 : token[dIndex];
 
 function tokenSpacers(token) = len(token) >= numberOfSpacersIndex+1 ? token[numberOfSpacersIndex] : number_of_tokens_between_spacers_default;
+
+module diamond(p, center=false) {
+    l=p[0];
+    w=p[1];
+    h=p[2];
+    translate([center?-l/2:0,0,center?-h/2:0]) {
+        CubePoints = [
+          [ 0,  0,  0 ],  //0
+          [ l/2,  -w/2,  0 ],  //1
+          [ l,  0,  0 ],  //2
+          [ l/2,  w/2,  0 ],  //3
+          [ 0,  0,  h ],  //4
+          [ l/2,  -w/2,  h ],  //5
+          [ l,  0,  h ],  //6
+          [ l/2,  w/2,  h ]]; //7
+
+        /*  
+        CubePoints = [
+          [ 0,  0,  0 ],  //0
+          [ l/2,  -w/2,  0 ],  //1
+          [ l,  0,  0 ],  //2
+          [ l/2,  w/2,  0 ],  //3
+          [ 0,  0,  h ],  //4
+          [ l/2,  -w/2,  h ],  //5
+          [ l,  0,  h ],  //6
+          [ l/2,  w/2,  h ]]; //7
+        */
+          
+        CubeFaces = [
+          [0,1,2,3],  // bottom
+          [4,5,1,0],  // front
+          [7,6,5,4],  // top
+          [5,6,2,1],  // right
+          [6,7,3,2],  // back
+          [7,4,0,3]]; // left
+           
+        polyhedron( CubePoints, CubeFaces );
+    }
+}
+
+module hexagon(tokenHeight, height) {
+    // Taken from mcad
+    // I have changed tokenDiameter to reflect the width of the hex token (wich is diamteter * 1.15).   But I don't want to use that when I actually generate the shape.   Instead I will use height which is the origional diameter.
+    for (r = [-60, 0, 60]) rotate([0,0,r]) cube([tokenHeight/1.75, tokenHeight, height], true);
+}
+
+module octagon(diameter, height) {
+    // Taken from mcad
+    // I have changed tokenDiameter to reflect the width of the hex token (wich is diamteter * octagonDiameterFinder).   But I don't want to use that when I actually generate the shape.   Instead I will use height which is the origional diameter.
+    rotate([0,0,20]) {
+        intersection() {
+            octagonDiameterFinder=1.085;
+            cube([diameter/octagonDiameterFinder, diameter/octagonDiameterFinder, height], center=true);
+            rotate([0,0,45]) cube([diameter/octagonDiameterFinder, diameter/octagonDiameterFinder, height], center=true);
+        }
+    }
+}
+
