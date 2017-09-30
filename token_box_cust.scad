@@ -11,7 +11,7 @@ tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19], 
 
 // How many tokens per group
 number_of_tokens_per_group=15; 
-// How many tokens between spacers
+// How many tokens between spacers (0 if you don't want spacers)
 number_of_tokens_between_spacers_default=5; 
 
 /* [Other] */
@@ -37,7 +37,6 @@ wallThickness=2; // Changing this will likly cause problems.
 roundEdgesDiameter=2;  // Changing this will likly cause problems.
 boxLipDepth=3;  // Changing this might cause problems.
 
-
 // How many token spacers need to be printer per group
 numberOfTokenSpacers=floor((number_of_tokens_per_group-1)/number_of_tokens_between_spacers_default);
 // Total Cylinder Length
@@ -52,6 +51,12 @@ boxWidth=sumTokenWidths(tokensList) +
       - roundEdgesDiameter; 
 height=roundEdgesDiameter/2 + max_token_height/2 - roundEdgesDiameter;  
 boxLipThickness=wallThickness + roundEdgesDiameter/2; // This would normally be wallThickness but the minkowski applies a half a roundEdgesDiameter to the outside of everything.
+
+// Change this for putting a stencil on top of the lid box.   About a 2mm thick stl is what is expected.
+surface_image_stl="xwing.stl";
+surface_image_rotate=[0,180,90];
+surface_image_translate=[0,0,-height-1.5];
+surface_image_scale=[0.8,0.8,2];
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
 echo("cylinderLength:", cylinderLength);
@@ -68,10 +73,8 @@ module print_part() {
             translate([boxLength-roundEdgesDiameter+10,0,-roundEdgesDiameter]) {
                 difference() {
                     topContainer();
-                    translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.8,0.8,2]) import("xwing.stl");
                 }
             }
-
             translate([-(boxLength*.6+max_token_diameter/2),0,-height-roundEdgesDiameter*2]) tokenSpacer();
     }
     if (part == "bottom") {
@@ -80,20 +83,21 @@ module print_part() {
     if (part == "top") {
         difference() {
             topContainer();
-            translate([0,0,-height-1.5]) rotate([0,180,90]) scale([0.8,0.8,2]) import("xwing.stl");
         }
     }
     if (part == "spacer") {
         tokenSpacer();
     }
 }
-    
+
 
 module tokenSpacer() {
     translate([0,-sumTokenWidths(v=tokensList)/2,0]) {
         for (i=[0:1:number_of_token_groups-1]) {
-            translate([0,sumToTokenWidths(v=tokensList,maxI=i)/2 + i*4,0.9]) {
-                tokenSpacerParamsDefined(token=tokensList[i], width=max_token_width*spacerGap);
+            if (tokenSpacers(tokensList[i]) > 0) {
+                translate([0,sumToTokenWidths(v=tokensList,maxI=i)/2 + i*4,0.9]) {
+                    tokenSpacerParamsDefined(token=tokensList[i], width=max_token_width*spacerGap);
+                }
             }
         }
     }
@@ -125,19 +129,32 @@ module tokenSpacerParamsDefined(token, width) {
 
 module topContainer() {
     difference() {
-        boxWithShapeRemoved(boxLength, boxWidth, height+.2, notches=false, extraHeight=boxLipDepth);
-        translate([0,0,0]) {
-            rotate([180,0,0]) {
-                difference() {
-                    bottomCube(boxLength-boxLipThickness+lid_gap, boxWidth-boxLipThickness+lid_gap, 5);
+        union() {
+            difference() {
+                boxWithShapeRemoved(boxLength, boxWidth, height+.2, notches=false, extraHeight=boxLipDepth);
+                translate([0,0,0]) {
+                    rotate([180,0,0]) {
+                        difference() {
+                            bottomCube(boxLength-boxLipThickness+lid_gap, boxWidth-boxLipThickness+lid_gap, 5);
+                        }
+                    }
                 }
             }
+            translate([0,0,boxLipDepth-.9])
+                cylinderRing(boxLength+lid_gap+1, boxWidth+lid_gap+1, .6, false);        
         }
+        
+        printLidImage();
     }
-    translate([0,0,boxLipDepth-.9])
-        cylinderRing(boxLength+lid_gap+1, boxWidth+lid_gap+1, .6, false);        
     
 }
+
+module printLidImage() {
+    if (surface_image_stl && surface_image_stl != "") {
+        translate(surface_image_translate) rotate(surface_image_rotate) scale(surface_image_scale) import(surface_image_stl);
+    }
+}    
+
 
 module bottomContainer() {
     difference() {
@@ -200,7 +217,7 @@ module printShapeWithNotches(token, length, notches) {
         rotate([0,90,0]) translate([0,0,length/2])
             printShape(token=token, height=length);
 
-        if (notches) {
+        if (notches && numberOfTokensPerSpacerForThisToken > 0) {
             for (i=[1:1:numberOfSpacers]) {
                 translate([i * (numberOfTokensPerSpacerForThisToken+1) * max_token_width - max_token_width/2, 0, -height/2])
                     notch(diameter, max_token_width);
@@ -279,4 +296,4 @@ function tokenDiameter(token) = token[sIndex] == "rectangle"? token[dIndex][0] :
 
 function tokenHeight(token) = token[sIndex] == "rectangle"? token[dIndex][1] : token[sIndex] == "octagon" ? token[dIndex] * 1.085 : token[dIndex];
 
-function tokenSpacers(token) = token[numberOfSpacersIndex] ? token[numberOfSpacersIndex] : number_of_tokens_between_spacers_default;
+function tokenSpacers(token) = len(token) >= numberOfSpacersIndex+1 ? token[numberOfSpacersIndex] : number_of_tokens_between_spacers_default;
