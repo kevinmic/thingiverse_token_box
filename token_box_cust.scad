@@ -33,6 +33,9 @@ number_of_token_groups=len(tokensList);
 max_token_height=maxTokenHeight(v=tokensList); 
 max_token_diameter=maxTokenDiameter(v=tokensList); 
 
+thumbHole=true;
+thumbHoleDiameter=15;
+
 spacerGap=0.95; // Spacer Gap percentage
 wallThickness=2; // Changing this will likly cause problems.
 roundEdgesDiameter=2;  // Changing this will likly cause problems.
@@ -172,7 +175,16 @@ module bottomContainer() {
         }
         // TODO: Remove magic numbers (2, 0.5)
         translate([0,0,-boxLipDepth+.9])
-            cylinderRing(boxLength-wallThickness/2+2, boxWidth-wallThickness/2+2, .6);        
+            cylinderRing(boxLength-wallThickness/2+2, boxWidth-wallThickness/2+2, .6);   
+   
+        if (thumbHole && (height - 2) > thumbHoleDiameter/2 && boxLength > thumbHoleDiameter) {
+            translate([0,boxWidth/2+2.5,-3])
+                rotate([90,0,0])
+                    cylinder(d=thumbHoleDiameter, h=4, center=true);
+            translate([0,-(boxWidth/2+2.5),-3])
+                rotate([90,0,0])
+                    cylinder(d=thumbHoleDiameter, h=4, center=true);
+        }
     }
 }
 
