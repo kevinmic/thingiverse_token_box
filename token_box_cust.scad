@@ -7,7 +7,8 @@
 part = "all"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
 
 // List of [[Shape, Diameter]].   Examples - ["circle",20], ["square",20] , ["hexagon",20], ["octagon", 20], ["rectagle", [width, height]], ["diamond", [width, height]]
-tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19], ["rectangle", [21.7, 19.4]], ["circle", 22.5], ["circle",19.2]];
+tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19.2], ["rectangle", [21.7, 19.4]], ["circle", 22.5], ["circle",19.2]];
+
 
 // How many tokens per group
 number_of_tokens_per_group=15; 
@@ -90,7 +91,6 @@ module print_part() {
     }
 }
 
-
 module tokenSpacer() {
     translate([0,-sumTokenHeights(v=tokensList)/2,0]) {
         for (i=[0:1:number_of_token_groups-1]) {
@@ -146,7 +146,6 @@ module topContainer() {
         
         printLidImage();
     }
-    
 }
 
 module printLidImage() {
@@ -190,6 +189,7 @@ module boxWithShapeRemoved(length, width, height, notches=false, extraHeight=0) 
             }
         }
     }
+    
 }
 
 module bottomCube(length, width, height, extraHeight=0) {
@@ -203,9 +203,7 @@ module bottomCube(length, width, height, extraHeight=0) {
         translate([0, 0, height+extraHeight])
             cube([length*2, width*2, height*2], center=true);
     }
-    
 }
-
 
 module printShapeWithNotches(token, length, notches) {
     diameter = tokenDiameter(token);
