@@ -1,19 +1,16 @@
-// smallmax_token_diameter=19.5;
-// largemax_token_diameter=25.5;
-
 // TODO: Play with images, Play with preview rotation
 
 /* [Global] */
-part = "all"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
+part = "top"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
 
 // List of [[Shape, Diameter]].   Examples - ["circle",20], ["square",20] , ["hexagon",20], ["octagon", 20], ["rectagle", [width, height]], ["diamond", [width, height]]
-tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19.2], ["rectangle", [21.7, 19.4]], ["circle", 22.5], ["circle",19.2]];
-
+//tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19.2], ["rectangle", [21.7, 19.4]], ["circle", 22.5], ["circle",19.2]];
+tokensList = [["circle",25.7], ["circle",25.7], ["octagon",25.7]];
 
 // How many tokens per group
-number_of_tokens_per_group=15; 
+number_of_tokens_per_group=20; 
 // How many tokens between spacers (0 if you don't want spacers)
-number_of_tokens_between_spacers_default=5; 
+number_of_tokens_between_spacers=4; 
 
 /* [Other] */
 // Token Width
@@ -33,8 +30,8 @@ number_of_token_groups=len(tokensList);
 max_token_height=maxTokenHeight(v=tokensList); 
 max_token_diameter=maxTokenDiameter(v=tokensList); 
 
-thumbHole=true;
-thumbHoleDiameter=15;
+keyHole=true;
+keyHoleDiameter=15;
 
 spacerGap=0.95; // Spacer Gap percentage
 wallThickness=2; // Changing this will likly cause problems.
@@ -42,7 +39,7 @@ roundEdgesDiameter=2;  // Changing this will likly cause problems.
 boxLipDepth=3;  // Changing this might cause problems.
 
 // How many token spacers need to be printer per group
-numberOfTokenSpacers=floor((number_of_tokens_per_group-1)/number_of_tokens_between_spacers_default);
+numberOfTokenSpacers=floor((number_of_tokens_per_group-1)/number_of_tokens_between_spacers);
 // Total Cylinder Length
 cylinderLength=max_token_width * number_of_tokens_per_group + // tokens
        max_token_width * numberOfTokenSpacers; // token spacers
@@ -57,10 +54,10 @@ height=roundEdgesDiameter/2 + max_token_height/2 - roundEdgesDiameter;
 boxLipThickness=wallThickness + roundEdgesDiameter/2; // This would normally be wallThickness but the minkowski applies a half a roundEdgesDiameter to the outside of everything.
 
 // Change this for putting a stencil on top of the lid box.   About a 2mm thick stl is what is expected.
-surface_image_stl="xwing/xwing.stl";
+surface_image_stl="descent/descent.stl";
 surface_image_rotate=[0,180,90];
 surface_image_translate=[0,0,-height-1.5];
-surface_image_scale=[0.8,0.8,2];
+surface_image_scale=[0.7,0.7,2];
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
 echo("cylinderLength:", cylinderLength);
@@ -177,13 +174,13 @@ module bottomContainer() {
         translate([0,0,-boxLipDepth+.9])
             cylinderRing(boxLength-wallThickness/2+2, boxWidth-wallThickness/2+2, .6);   
    
-        if (thumbHole && (height - 2) > thumbHoleDiameter/2 && boxLength > thumbHoleDiameter) {
+        if (keyHole && boxLength > keyHoleDiameter) {
             translate([0,boxWidth/2+2.5,-3])
                 rotate([90,0,0])
-                    cylinder(d=thumbHoleDiameter, h=4, center=true);
+                    cube([keyHoleDiameter, 4, 4], h=4, center=true);
             translate([0,-(boxWidth/2+2.5),-3])
                 rotate([90,0,0])
-                    cylinder(d=thumbHoleDiameter, h=4, center=true);
+                    cube([keyHoleDiameter, 4, 4], h=4, center=true);
         }
     }
 }
@@ -292,7 +289,7 @@ function tokenDiameter(token) = token[sIndex] == "rectangle" || token[sIndex] ==
 
 function tokenHeight(token) = token[sIndex] == "rectangle" || token[sIndex] == "diamond" ? token[dIndex][1] : token[sIndex] == "octagon" ? token[dIndex] * 1.085 : token[dIndex];
 
-function tokenSpacers(token) = len(token) >= numberOfSpacersIndex+1 ? token[numberOfSpacersIndex] : number_of_tokens_between_spacers_default;
+function tokenSpacers(token) = len(token) >= numberOfSpacersIndex+1 ? token[numberOfSpacersIndex] : number_of_tokens_between_spacers;
 
 module diamond(p, center=false) {
     l=p[0];
