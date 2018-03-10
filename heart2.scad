@@ -1,11 +1,12 @@
 $fn = 50;
 
-includeText = true;
+includeText = false;
 Text = "1";
 Font = "Euphemia UCAS:style=bold";
 TextHeight = 7;
+TextDistance = 2;
 
-stackShape="circle";
+stackShape="heart";
 
 difference() {
     union() {
@@ -28,8 +29,8 @@ module topShape() {
     if (stackShape == "heart") {
         translate([1.0,1.0,1.3])
         difference() {
-            heart(9.2, 1, 1.0);
-            heart(8, 4, 1.8);
+            heart(9.3, 1, 1.0);
+            heart(7.9, 4, 1.8);
         }
     }
     else if (stackShape == "circle") {
@@ -63,7 +64,7 @@ module bottomShape() {
 
 module textCutout() {
     if (includeText) {
-        translate([2,2,-2])
+        translate([TextDistance,TextDistance,-2])
             rotate([0,0,-45])
                 printText(d=4, scale=.6);
     }
