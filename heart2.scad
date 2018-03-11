@@ -6,6 +6,10 @@ Font = "Euphemia UCAS:style=bold";
 TextHeight = 7;
 TextDistance = 2;
 
+includeMagnet = true;
+magnetDiameter = 3.35;
+magnetPosition = [2,2,1.7];
+
 stackShape="heart";
 
 difference() {
@@ -15,6 +19,7 @@ difference() {
     }
     bottomShape();
     textCutout();
+    magnetCutout();
 }
     
 module mainShape() {
@@ -67,6 +72,14 @@ module textCutout() {
         translate([TextDistance,TextDistance,-2])
             rotate([0,0,-45])
                 printText(d=4, scale=.6);
+    }
+}
+
+module magnetCutout() {
+    if (includeMagnet) {
+        translate(magnetPosition) {
+            cylinder(d=magnetDiameter, h=3, center=true);
+        }
     }
 }
 
