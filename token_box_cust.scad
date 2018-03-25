@@ -1,16 +1,25 @@
 // TODO: Play with images, Play with preview rotation
 
 /* [Global] */
-part = "top"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
+part = "bottom"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
 
 // List of [[Shape, Diameter]].   Examples - ["circle",20], ["square",20] , ["hexagon",20], ["octagon", 20], ["rectagle", [width, height]], ["diamond", [width, height]]
 //tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19.2], ["rectangle", [21.7, 19.4]], ["circle", 22.5], ["circle",19.2]];
-tokensList = [["circle",25.7], ["circle",25.7], ["octagon",25.7]];
-
 // How many tokens per group
-number_of_tokens_per_group=20; 
+//number_of_tokens_per_group=20; 
 // How many tokens between spacers (0 if you don't want spacers)
-number_of_tokens_between_spacers=4; 
+//number_of_tokens_between_spacers=4; 
+
+
+// Descent Large Tokens
+//tokensList = [["circle",25.7], ["octagon",25.7], ["circle",25.7]];
+//number_of_tokens_per_group=20; 
+//number_of_tokens_between_spacers=4; 
+
+// Descent Small Tokens
+tokensList = [["circle",19.7], ["circle",19.7], ["circle",19.7], ["circle",19.7]];
+number_of_tokens_per_group=20;
+number_of_tokens_between_spacers=5;
 
 /* [Other] */
 // Token Width
@@ -170,6 +179,18 @@ module bottomContainer() {
                 }
             }
         }
+        translate([0,0,-height-boxLipDepth]) {
+            rotate([180,180,0]) {
+                difference() {
+                    bottomCube(boxLength+5, boxWidth+5, 5);
+                    translate([0,0,2])
+                        bottomCube(boxLength-boxLipThickness, boxWidth-boxLipThickness, 20);   
+                }
+                translate([0,0,0])
+                    boxRing2(boxLength+1, boxWidth+1, 2);
+            }
+        }
+        
         // TODO: Remove magic numbers (2, 0.5)
         translate([0,0,-boxLipDepth+.9])
             cylinderRing(boxLength-wallThickness/2+2, boxWidth-wallThickness/2+2, .6);   
@@ -183,6 +204,30 @@ module bottomContainer() {
                     cube([keyHoleDiameter, 4, 4], h=4, center=true);
         }
     }
+}
+
+module boxRing2(w,l,d) {
+    r=d/2;
+    for (x = [1,-1]) {
+        for (y = [1,-1]) {
+            translate([(w/2-d)*x,(l/2-d)*y,0])
+                rotate([0,0,x == 1? y == 1?0:270:y == 1?90:180])
+                rotate_extrude(angle=90, convexity=10)
+                    translate([d, 0]) chamferShape(d);
+        }
+        l2=l-2*d;
+        w2=w-2*d;
+        translate([w/2*x,l2/2*x,0]) 
+            rotate([90,0,x==1?0:180]) linear_extrude(l2) chamferShape(d);
+        translate([w2/2*x*-1,l/2*x,0]) 
+            rotate([90,0,x==1?90:-90]) linear_extrude(w2) chamferShape(d);
+    }
+}
+
+module chamferShape(d) {
+    lowY=-0.5*d;
+    maxX=1.5*d;
+    polygon( points=[[0,0],[0,lowY],[maxX,lowY],[maxX,d],[d,d]] );
 }
 
 module boxWithShapeRemoved(length, width, height, notches=false, extraHeight=0) {
