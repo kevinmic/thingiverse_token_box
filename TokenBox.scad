@@ -3,10 +3,10 @@
 /* [Global] */
 part = "bottom"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box, spacer:Token Spacer
 
-// List of [[Shape, Diameter]].   Examples - ["circle",20], ["square",20] , ["hexagon",20], ["octagon", 20], ["rectagle", [width, height]], ["diamond", [width, height]]
+// List of [[Shape, Diameter, numberTokensPerSpacer - optional]].   Examples - ["circle",20], ["square",20] , ["hexagon",20], ["octagon", 20], ["rectagle", [width, height]], ["diamond", [width, height]], ["circle", 20, 5]
 //tokensList = [["rectangle",[29.8, 25.5],2], ["octagon", 19.2], ["hexagon", 19.2], ["rectangle", [21.7, 19.4]], ["circle", 22.5], ["circle",19.2]];
 // How many tokens per group
-//number_of_tokens_per_group=20; 
+// number_of_tokens_per_group=20; 
 // How many tokens between spacers (0 if you don't want spacers)
 //number_of_tokens_between_spacers=4; 
 
