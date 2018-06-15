@@ -5,9 +5,9 @@ IncludeMagnetHole = true;
 
 /* [Advanced Text Settings] */
 TextFont = "Euphemia UCAS:style=bold";
-TextHeight = 7;  
+TextHeight = 7;  // 6.5 for 2 digits
 //This needs adjusted depending on the TextHeight and actual Characters
-TextDistanceFromCenter = 2.0;
+TextDistanceFromCenter = 2; // 2.6 for 2 digits
 //The lower the number the deeper the text.
 TextDepth = 0.6;
 
@@ -30,7 +30,7 @@ difference() {
     
 module mainShape() {
     minkowski() {
-        heart(10, 0.3, 1);
+        heart(10, 0.3, 1); // 10 small, 13 medium, 16 large
         translate([1,1,0])
         sphere(1);
     }
