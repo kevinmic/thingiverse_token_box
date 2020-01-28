@@ -30,7 +30,7 @@ difference() {
     
 module mainShape() {
     minkowski() {
-        heart(10, 0.3, 1); // 10 small, 11.5 small-medium, 13 medium, 16 large
+        heart(10, 0.3, 1); // 10 small, 13 medium, 16 large
         translate([1,1,0])
         sphere(1);
     }

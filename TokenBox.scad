@@ -8,18 +8,58 @@ part = "bottom"; // [all:bottom/top/spacer, bottom:Bottom of Box, top:Top of Box
 // How many tokens per group
 // number_of_tokens_per_group=20; 
 // How many tokens between spacers (0 if you don't want spacers)
+// number_of_tokens_between_spacers=4; 
+
+// 16 Search tokens (circle - 25.7)
+// 16 Explore tokens (circle - 25.7)
+// 22 people tokens (circle - 25.7)
+// 18  fire tokens (square - 25.7)
+// 20 furniture tokens
+// -- 4 picture (rectangle - 19.7w x 32.3h)
+// -- 4 bookcase (rectangle)
+// -- 4 door (rectangle)
+// -- 2 cabinet/secret passage (square - 25.7)
+// -- 2 manhole / manhole (square - 25.7)
+// -- 4 barrell / pantry rack (square - 25.7)
+// 6 symbol tokens (squareish - 19.7)
+// 25 search tokens (small circle - 19.7)
+
+// Mansions - Monster Cards
+//tokensList = [
+//              ["square",35.8], 
+//              ["square",35.8]
+//             ];
+//number_of_tokens_per_group=36; 
+//number_of_tokens_between_spacers=2;
+//keyHoleAlongLength=true;
+
+// Mansions - large round tokens
+//tokensList = [
+//              ["circle",25.7], 
+//              ["circle",25.7], 
+//              ["circle",25.7],
+//             ];
+//number_of_tokens_per_group=24; 
 //number_of_tokens_between_spacers=4; 
 
+// Mansions - Square tokens - For simplicity I made them the width of the square and the height of the rectangle
+tokensList = [
+              ["rectangle",[25.7, 32.3]],
+              ["rectangle",[25.7, 32.3]],
+             ];
+             
+number_of_tokens_per_group=24; 
+number_of_tokens_between_spacers=4; 
+keyHoleAlongLength=true;
 
-// Descent Large Tokens
-//tokensList = [["circle",25.7], ["octagon",25.7], ["circle",25.7]];
-//number_of_tokens_per_group=20; 
-//number_of_tokens_between_spacers=4; 
+// Mansions - Small tokens
+//tokensList = [
+//              ["circle",19.7], 
+//              ["circle",19.7],
+//             ];
+//number_of_tokens_per_group=15; 
+//number_of_tokens_between_spacers=5; 
 
-// Descent Small Tokens
-tokensList = [["circle",19.7], ["circle",19.7], ["circle",19.7], ["circle",19.7]];
-number_of_tokens_per_group=20;
-number_of_tokens_between_spacers=5;
 
 /* [Other] */
 // Token Width
@@ -63,10 +103,10 @@ height=roundEdgesDiameter/2 + max_token_height/2 - roundEdgesDiameter;
 boxLipThickness=wallThickness + roundEdgesDiameter/2; // This would normally be wallThickness but the minkowski applies a half a roundEdgesDiameter to the outside of everything.
 
 // Change this for putting a stencil on top of the lid box.   About a 2mm thick stl is what is expected.
-surface_image_stl="descent/descent.stl";
-surface_image_rotate=[0,180,90];
+surface_image_stl="mansions7.stl";
+surface_image_rotate=[0,180,90*keyHoleAlongLength?0:1];
 surface_image_translate=[0,0,-height-1.5];
-surface_image_scale=[0.7,0.7,2];
+surface_image_scale=[0.5,0.5,2];
 
 echo("numberOfTokenSpacers:", numberOfTokenSpacers);
 echo("cylinderLength:", cylinderLength);
@@ -76,6 +116,8 @@ echo("height:", height);
 echo("boxLipThickness:", boxLipThickness);
 
 print_part();
+
+
 
 module print_part() {
     if (part == "all") {
@@ -97,6 +139,13 @@ module print_part() {
     }
     if (part == "spacer") {
         tokenSpacer();
+    }
+    if (part == "image") {
+        difference() {
+            printLidImage();
+            translate([0,0,-2.2])
+            cube([100,100,4], center=true);
+        }
     }
 }
 
@@ -159,7 +208,10 @@ module topContainer() {
 
 module printLidImage() {
     if (surface_image_stl && surface_image_stl != "") {
-        translate(surface_image_translate) rotate(surface_image_rotate) scale(surface_image_scale) import(surface_image_stl);
+        translate(surface_image_translate) 
+        rotate(surface_image_rotate) 
+        scale(surface_image_scale) 
+        import(surface_image_stl);
     }
 }    
 
@@ -196,14 +248,25 @@ module bottomContainer() {
             cylinderRing(boxLength-wallThickness/2+2, boxWidth-wallThickness/2+2, .6);   
    
         if (keyHole && boxLength > keyHoleDiameter) {
-            translate([0,boxWidth/2+2.5,-3])
-                rotate([90,0,0])
-                    cube([keyHoleDiameter, 4, 4], h=4, center=true);
-            translate([0,-(boxWidth/2+2.5),-3])
-                rotate([90,0,0])
-                    cube([keyHoleDiameter, 4, 4], h=4, center=true);
+            if (keyHoleAlongLength) {
+                rotate([0,0,90])
+                    keyHoleFunction(boxLength);
+            }
+            else {
+                keyHoleFunction(boxWidth);
+            }
         }
     }
+}
+
+module keyHoleFunction(width) {
+    translate([0,width/2+2.5,-3])
+        rotate([90,0,0])
+            cube([keyHoleDiameter, 4, 4], h=4, center=true);
+    translate([0,-(width/2+2.5),-3])
+        rotate([90,0,0])
+            cube([keyHoleDiameter, 4, 4], h=4, center=true);
+
 }
 
 module boxRing2(w,l,d) {
